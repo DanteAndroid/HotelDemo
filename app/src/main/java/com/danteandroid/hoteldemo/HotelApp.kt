@@ -72,7 +72,7 @@ fun HotelApp() {
     val currentRoute = currentDestination?.route.orEmpty()
     val showBottomBar = currentRoute.startsWith("home") || currentRoute.startsWith("orders") || currentRoute.startsWith("checkin")
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) {
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) {padding->
         Box(modifier = Modifier.fillMaxSize()) {
             val targetBottomPadding = if (showBottomBar) 80.dp else 0.dp
             val navBarBottomPadding by animateDpAsState(
@@ -108,7 +108,7 @@ fun HotelApp() {
                     }),
                 ) { backStack ->
                     val code = backStack.arguments?.getString("code")
-                    CheckInScreen(initialBookingCode = code)
+                    CheckInScreen(navController = navController, initialBookingCode = code)
                 }
 
                 composable(
@@ -160,7 +160,7 @@ fun HotelApp() {
                             Screen.CheckIn -> "checkin"
                             else -> item.screen.route
                         }
-                        val selected = currentDestination?.hierarchy?.any { it.route?.startsWith(base) == true } == true
+                        val selected = currentRoute.startsWith(base)
                         NavigationBarItem(
                             icon = { Icon(if (selected) item.selectedIcon else item.unselectedIcon, contentDescription = item.label) },
                             label = { Text(item.label) },

@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -24,21 +26,42 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.danteandroid.hoteldemo.data.model.Booking
 import com.danteandroid.hoteldemo.data.model.BookingStatus
+import com.danteandroid.hoteldemo.navigation.Screen
 import com.danteandroid.hoteldemo.ui.orders.StatusChip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckInScreen(initialBookingCode: String? = null, vm: CheckInViewModel = viewModel()) {
+fun CheckInScreen(
+    navController: NavController,
+    initialBookingCode: String? = null,
+    vm: CheckInViewModel = viewModel(),
+) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val autoReturnHandled = remember { mutableStateOf(false) }
 
     LaunchedEffect(initialBookingCode) {
         val code = initialBookingCode?.trim().orEmpty()
         if (code.isNotBlank() && vm.bookingCode.isBlank()) {
             vm.bookingCode = code
             vm.searchBooking()
+        }
+    }
+
+    LaunchedEffect(uiState, initialBookingCode) {
+        val code = initialBookingCode?.trim().orEmpty()
+        if (!autoReturnHandled.value && code.isNotBlank() && uiState is CheckInUiState.CheckedIn) {
+            autoReturnHandled.value = true
+            navController.previousBackStackEntry?.savedStateHandle?.set("orders_reset", true)
+            navController.navigate(Screen.Orders.route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
         }
     }
 

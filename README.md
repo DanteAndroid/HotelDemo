@@ -2,6 +2,8 @@
 
 一个基于 Android Jetpack Compose 的酒店预订 Demo，后端使用 Supabase（Postgres + PostgREST）提供房间列表、预订、订单查询、办理入住等能力。
 
+[面试官点此处](/项目记录.pdf)
+
 ## 功能概览
 
 - 房间列表：按房型筛选，展示价格/面积/人数/楼层

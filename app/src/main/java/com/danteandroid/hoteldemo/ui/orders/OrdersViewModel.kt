@@ -29,6 +29,12 @@ class OrdersViewModel : ViewModel() {
     var searchQuery by mutableStateOf("")
     var searchMode by mutableStateOf(SearchMode.BY_PHONE)
 
+    fun reset() {
+        searchQuery = ""
+        searchMode = SearchMode.BY_PHONE
+        _uiState.value = OrdersUiState.Initial
+    }
+
     fun search() {
         if (searchQuery.isBlank()) return
         viewModelScope.launch {
