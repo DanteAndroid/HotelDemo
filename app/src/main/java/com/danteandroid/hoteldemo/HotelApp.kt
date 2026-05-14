@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MeetingRoom
@@ -31,8 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -40,7 +37,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.danteandroid.hoteldemo.navigation.Screen
 import com.danteandroid.hoteldemo.ui.booking.BookingScreen
 import com.danteandroid.hoteldemo.ui.booking.BookingSuccessScreen
@@ -62,7 +58,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(Screen.CheckIn, "办理入住", Icons.Filled.MeetingRoom, Icons.Outlined.MeetingRoom),
 )
 
-private val bottomNavRouteOrder = listOf("home", "orders", "checkin")
+private val bottomNavRouteOrder = listOf("home", "orders", "orders_checkin", "checkin")
 
 @Composable
 fun HotelApp() {
@@ -70,7 +66,15 @@ fun HotelApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route.orEmpty()
-    val showBottomBar = currentRoute.startsWith("home") || currentRoute.startsWith("orders") || currentRoute.startsWith("checkin")
+    val routeTop = currentRoute.substringBefore("?")
+    val onOrdersList = routeTop == Screen.Orders.route
+    val onOrdersCheckInFlow = routeTop == "orders_checkin"
+    val ordersTabSelected = onOrdersList || onOrdersCheckInFlow
+    val showBottomBar =
+        routeTop == Screen.Home.route ||
+            routeTop == Screen.Orders.route ||
+            routeTop == "orders_checkin" ||
+            routeTop == "checkin"
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) {padding->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -109,6 +113,19 @@ fun HotelApp() {
                 ) { backStack ->
                     val code = backStack.arguments?.getString("code")
                     CheckInScreen(navController = navController, initialBookingCode = code)
+                }
+                composable(
+                    route = Screen.OrdersCheckIn.route,
+                    arguments = listOf(navArgument("code") {
+                        type = NavType.StringType
+                    }),
+                ) { backStack ->
+                    val code = backStack.arguments?.getString("code") ?: return@composable
+                    CheckInScreen(
+                        navController = navController,
+                        initialBookingCode = code,
+                        allowOrderSearch = false,
+                    )
                 }
 
                 composable(
@@ -160,7 +177,11 @@ fun HotelApp() {
                             Screen.CheckIn -> "checkin"
                             else -> item.screen.route
                         }
-                        val selected = currentRoute.startsWith(base)
+                        val selected = when (item.screen) {
+                            Screen.Orders -> ordersTabSelected
+                            Screen.CheckIn -> routeTop == "checkin"
+                            else -> routeTop == base
+                        }
                         NavigationBarItem(
                             icon = { Icon(if (selected) item.selectedIcon else item.unselectedIcon, contentDescription = item.label) },
                             label = { Text(item.label) },
@@ -173,6 +194,19 @@ fun HotelApp() {
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                             onClick = {
+                                if (item.screen == Screen.Orders) {
+                                    if (!onOrdersList) {
+                                        if (onOrdersCheckInFlow) navController.popBackStack()
+                                        else {
+                                            navController.navigate(Screen.Orders.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    }
+                                    return@NavigationBarItem
+                                }
                                 if (!selected) {
                                     val route = if (item.screen == Screen.CheckIn) Screen.CheckIn.createRoute() else item.screen.route
                                     navController.navigate(route) {

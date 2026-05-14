@@ -141,7 +141,7 @@ fun OrdersScreen(navController: NavController, vm: OrdersViewModel = viewModel()
                             BookingCard(
                                 booking = booking,
                                 onCheckIn = { code ->
-                                    navController.navigate(Screen.CheckIn.createRoute(code))
+                                    navController.navigate(Screen.OrdersCheckIn.createRoute(code))
                                 },
                             )
                         }

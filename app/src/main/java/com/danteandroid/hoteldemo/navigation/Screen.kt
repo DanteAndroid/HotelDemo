@@ -8,6 +8,10 @@ sealed class Screen(val route: String) {
             if (code.isNullOrBlank()) "checkin" else "checkin?code=$code"
     }
 
+    data object OrdersCheckIn : Screen("orders_checkin?code={code}") {
+        fun createRoute(code: String) = "orders_checkin?code=$code"
+    }
+
     data object RoomDetail : Screen("room_detail/{roomId}") {
         fun createRoute(roomId: String) = "room_detail/$roomId"
     }

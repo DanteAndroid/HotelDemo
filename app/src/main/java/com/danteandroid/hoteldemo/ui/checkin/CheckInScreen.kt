@@ -38,6 +38,7 @@ import com.danteandroid.hoteldemo.ui.orders.StatusChip
 fun CheckInScreen(
     navController: NavController,
     initialBookingCode: String? = null,
+    allowOrderSearch: Boolean = true,
     vm: CheckInViewModel = viewModel(),
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
@@ -52,9 +53,9 @@ fun CheckInScreen(
         }
     }
 
-    LaunchedEffect(uiState, initialBookingCode) {
+    LaunchedEffect(uiState, initialBookingCode, allowOrderSearch) {
         val code = initialBookingCode?.trim().orEmpty()
-        if (!autoReturnHandled.value && code.isNotBlank() && uiState is CheckInUiState.CheckedIn) {
+        if (!allowOrderSearch && !autoReturnHandled.value && code.isNotBlank() && uiState is CheckInUiState.CheckedIn) {
             autoReturnHandled.value = true
             navController.previousBackStackEntry?.savedStateHandle?.set("orders_reset", true)
             navController.navigate(Screen.Orders.route) {
@@ -83,61 +84,91 @@ fun CheckInScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // 说明文字
-            ElevatedCard(
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-            ) {
-                Row(modifier = Modifier.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Outlined.RoomService, null, tint = MaterialTheme.colorScheme.primary)
-                    Text(
-                        "请输入预订时获得的订单号，核实信息后即可办理入住。",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            // 搜索区
-            OutlinedTextField(
-                value = vm.bookingCode,
-                onValueChange = { vm.bookingCode = it.uppercase() },
-                label = { Text("订单号") },
-                placeholder = { Text("例：A1B2C3D4") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                singleLine = true,
-                enabled = uiState is CheckInUiState.Initial || uiState is CheckInUiState.NotFound || uiState is CheckInUiState.Error,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
-                    imeAction = ImeAction.Search,
-                ),
-                keyboardActions = KeyboardActions(onSearch = {
-                    keyboardController?.hide()
-                    vm.searchBooking()
-                }),
-                trailingIcon = { Icon(Icons.Outlined.Search, null) },
-            )
-
-            Button(
-                onClick = {
-                    keyboardController?.hide()
-                    when (uiState) {
-                        is CheckInUiState.CheckedIn -> vm.reset()
-                        else -> vm.searchBooking()
+            if (allowOrderSearch) {
+                ElevatedCard(
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+                ) {
+                    Row(modifier = Modifier.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Outlined.RoomService, null, tint = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "请输入预订时获得的订单号，核实信息后即可办理入住。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = MaterialTheme.shapes.large,
-                enabled = uiState !is CheckInUiState.Searching && uiState !is CheckInUiState.ProcessingCheckIn,
-            ) {
-                Text(if (uiState is CheckInUiState.CheckedIn) "重新查询" else "查询订单",
-                    style = MaterialTheme.typography.titleMedium)
+                }
+
+                OutlinedTextField(
+                    value = vm.bookingCode,
+                    onValueChange = { vm.bookingCode = it.uppercase() },
+                    label = { Text("订单号") },
+                    placeholder = { Text("例：A1B2C3D4") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    singleLine = true,
+                    enabled = uiState is CheckInUiState.Initial || uiState is CheckInUiState.NotFound || uiState is CheckInUiState.Error,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        imeAction = ImeAction.Search,
+                    ),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        keyboardController?.hide()
+                        vm.searchBooking()
+                    }),
+                    trailingIcon = { Icon(Icons.Outlined.Search, null) },
+                )
+
+                Button(
+                    onClick = {
+                        keyboardController?.hide()
+                        when (uiState) {
+                            is CheckInUiState.CheckedIn -> vm.reset()
+                            else -> vm.searchBooking()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = MaterialTheme.shapes.large,
+                    enabled = uiState !is CheckInUiState.Searching && uiState !is CheckInUiState.ProcessingCheckIn,
+                ) {
+                    Text(if (uiState is CheckInUiState.CheckedIn) "重新查询" else "查询订单",
+                        style = MaterialTheme.typography.titleMedium)
+                }
+            } else {
+                ElevatedCard(
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+                ) {
+                    Row(modifier = Modifier.padding(18.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Outlined.RoomService, null, tint = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "请核对订单信息，确认后即可办理入住。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
 
             // 状态区域
             when (val state = uiState) {
-                is CheckInUiState.Initial -> { /* 等待输入 */ }
+                is CheckInUiState.Initial -> {
+                    if (!allowOrderSearch) {
+                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                CircularProgressIndicator()
+                                Text(
+                                    "正在加载订单...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
                 is CheckInUiState.Searching, is CheckInUiState.ProcessingCheckIn -> {
                     Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -149,24 +180,42 @@ fun CheckInScreen(
                     }
                 }
                 is CheckInUiState.NotFound -> {
-                    Card(
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    ) {
-                        Text(state.message,
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            textAlign = TextAlign.Center)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Card(
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        ) {
+                            Text(state.message,
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                textAlign = TextAlign.Center)
+                        }
+                        if (!allowOrderSearch) {
+                            OutlinedButton(
+                                onClick = { vm.searchBooking() },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = uiState !is CheckInUiState.Searching,
+                            ) { Text("重试") }
+                        }
                     }
                 }
                 is CheckInUiState.Error -> {
-                    Card(
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    ) {
-                        Text("错误：${state.message}",
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Card(
+                            shape = MaterialTheme.shapes.large,
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        ) {
+                            Text("错误：${state.message}",
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                color = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                        if (!allowOrderSearch) {
+                            OutlinedButton(
+                                onClick = { vm.searchBooking() },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = uiState !is CheckInUiState.Searching,
+                            ) { Text("重试") }
+                        }
                     }
                 }
                 is CheckInUiState.Found -> BookingFoundCard(state.booking, onConfirm = { vm.confirmCheckIn() })
