@@ -12,6 +12,19 @@
 - 订单查询：按手机号或订单号查询，展示状态与时间信息，支持一键跳转办理入住
 - 办理入住：输入/带入订单号查询，确认后更新订单状态为已入住
 
+## 截图
+
+<table>
+  <tr>
+    <td><img src="screenshot/Screenshot_20260514_200923.png" width="240" alt="首页" /></td>
+    <td><img src="screenshot/Screenshot_20260514_200936.png" width="240" alt="房间详情" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshot/Screenshot_20260514_200943.png" width="240" alt="预订信息" /></td>
+    <td><img src="screenshot/Screenshot_20260514_201010.png" width="240" alt="办理入住" /></td>
+  </tr>
+</table>
+
 ## 技术栈
 
 **前端**
@@ -102,4 +115,3 @@ adb shell am start -n com.danteandroid.hoteldemo/.MainActivity
 - 详情页加载慢：当前实现会按 `roomId` 走一次 PostgREST 网络请求（以及图片网络加载），网络质量会直接影响体验。
 - 查询不到数据：请确认已执行 `SUPABASE_SCHEMA.sql`，并且在 Supabase 表里已有样例 `rooms` 数据。
 - 无法连接 Supabase：检查 `SUPABASE_URL` 与 `SUPABASE_ANON_KEY` 是否配置正确。
-
